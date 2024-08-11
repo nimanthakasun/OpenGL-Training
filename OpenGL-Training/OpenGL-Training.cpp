@@ -11,8 +11,15 @@
 static unsigned int CreateShader(const std::string& vertexShader, const std::string& fragmentShader);
 static unsigned int CompileShader(unsigned int type, const std::string& source);
 static std::string ParseShader(const std::string& filepath);
+static void GLClearError();
+static bool GLLogCall(const char* function, const char* file, int line);
 
-int WinMain(void)
+#define ASSERT(x) if (!(x)) __debugbreak();
+#define GLCall(x) GLClearError();\
+    x;\
+    ASSERT(GLLogCall(#x, __FILE__, __LINE__))
+
+int main(void)
 {
     GLFWwindow* window;
 
@@ -90,7 +97,10 @@ int WinMain(void)
         //glEnd();
 
         //glDrawArrays(GL_TRIANGLES, 0, 6);
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
+        GLClearError();
+        GLCall(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr));
+        //GLCheckError();
+        //ASSERT(GLLogCall());
 
         /* Swap front and back buffers */
         glfwSwapBuffers(window);
@@ -146,5 +156,18 @@ static std::string ParseShader(const std::string& filepath) {
     }
 
     return ss.str();
+}
+
+static void GLClearError() {
+    while (!glGetError());
+
+}
+
+static bool GLLogCall(const char* function, const char* file, int line) {
+    while (GLenum error = glGetError()) {
+        std::cout << "[OpenGL Error] (" << error << ")" << function << " " << file << ":" << line << std::endl;
+        return false;
+    }
+    return true;
 }
 
